@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>⚡ Ultra Admin Panel (Final Pro)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #00e5ff; --bg: #000; --card: #111; --text: #fff; }
+        body { background: var(--bg); color: var(--text); font-family: 'Poppins', sans-serif; margin: 0; padding: 0; padding-bottom: 80px; }
+        
+        /* 🔥 HEADER & TABS */
+        .sticky-header { position: sticky; top: 0; z-index: 1000; background: rgba(0,0,0,0.95); border-bottom: 1px solid #222; padding: 10px; }
+        .nav-tabs { display: flex; background: #1a1a1a; border-radius: 12px; padding: 5px; gap: 5px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; color: #888; font-weight: 800; border-radius: 8px; font-size: 11px; cursor: pointer; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: #000; box-shadow: 0 0 15px rgba(0,229,255,0.4); }
+        
+        /* 🔥 TOOLS & DATE BUTTONS */
+        .tools-row { display: flex; gap: 10px; margin-top: 10px; }
+        .date-tabs { display: flex; gap: 5px; margin-bottom: 15px; margin-top: 5px; }
+        .date-btn { flex: 1; background: #222; color: #fff; border: 1px solid #333; padding: 8px; border-radius: 8px; font-size: 10px; font-weight: 700; cursor: pointer; }
+        .date-btn.active { background: #00e5ff; color: #000; border-color: #00e5ff; }
+
+        .search-box { flex: 1; background: #111; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; outline: none; font-weight: 600; font-size: 13px; }
+        .icon-btn { width: 45px; background: #222; border: 1px solid #333; color: #fff; border-radius: 10px; cursor: pointer; font-size: 18px; }
+        
+        /* 🔥 CARD & FONTS (BIGGER) */
+        .container { padding: 15px; max-width: 600px; margin: auto; }
+        .card { background: var(--card); border: 1px solid #222; border-radius: 16px; padding: 15px; margin-bottom: 15px; position: relative; transition: 0.3s; }
+        .card-left-border { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--primary); }
+        
+        .amt-huge { font-size: 26px; font-weight: 900; color: #fff; letter-spacing: 1px; }
+        .upi-container { background: #1a1a1a; padding: 12px; border-radius: 8px; border: 1px dashed #444; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .upi-container:active { background: #004d40; border-color: #00e5ff; }
+        .upi-text { font-family: monospace; font-size: 16px; color: #00e5ff; font-weight: bold; }
+        
+        /* 🔥 FORMS & BUTTONS */
+        .mark-btn { flex: 1; background: var(--primary); color: #000; border: none; padding: 14px; border-radius: 50px; font-weight: 800; cursor: pointer; font-size: 13px; text-transform: uppercase; }
+        .form-group { margin-bottom: 15px; }
+        .lbl { font-size: 10px; color: #888; font-weight: 700; margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: 1px; }
+        .inp { width: 100%; padding: 14px; background: #111; border: 1px solid #333; color: #fff; border-radius: 10px; font-family: inherit; box-sizing: border-box; outline: none; font-size: 14px; }
+        .inp:focus { border-color: var(--primary); }
+        .emoji-bar { display: flex; gap: 8px; margin-bottom: 8px; overflow-x: auto; padding-bottom: 5px; }
+        .emoji-btn { padding: 8px 12px; background: #222; border: 1px solid #333; border-radius: 8px; cursor: pointer; font-size: 16px; min-width: 40px; }
+        .save-btn { width: 100%; background: #00e5ff; color: #000; padding: 16px; border-radius: 50px; border: none; font-size: 16px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 15px rgba(0,229,255,0.2); }
+        .del-btn { background: #ff4444; color: #fff; padding: 5px 10px; border-radius: 6px; border: none; font-size: 10px; font-weight: 700; cursor: pointer; }
+        .hidden { display: none; }
+        #loader { text-align: center; padding: 20px; color: #888; font-size: 12px; font-weight: 600; }
+        
+        /* 🔥 LOGIN OVERLAY */
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        #token-input { background: #111; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 10px; width: 100%; max-width: 300px; outline: none; margin-bottom: 20px; font-family: monospace; }
+        .filter-select { width: 100%; padding: 12px; background: #1a1a1a; color: #fff; border: 1px solid #333; border-radius: 12px; font-size: 14px; font-weight: 700; outline: none; margin-bottom: 15px; -webkit-appearance: none; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="login-overlay">
+    <h2 style="color:var(--primary); margin-bottom:10px;">ADMIN ACCESS</h2>
+    <p style="color:#666; font-size:12px; margin-bottom:20px; text-align:center;">Enter GitHub Token to Unlock</p>
+    <input type="text" id="token-input" placeholder="ghp_xxxxxxxxxxxx">
+    <button onclick="saveTokenAndLogin()" class="mark-btn" style="width:100%; max-width:300px; flex:none;">UNLOCK PANEL</button>
+</div>
+
+<div class="sticky-header">
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('manage')">MANAGE OFFERS</button>
+        <button class="tab-btn" onclick="switchTab('pay')">PAYMENTS & STATS</button>
+    </div>
+    <div id="pay-tools" class="tools-row hidden">
+        <input type="text" id="search" class="search-box" placeholder="Search UPI..." onkeyup="processLeads()">
+        <button class="icon-btn" onclick="forceReload()">🔄</button>
+    </div>
+</div>
+
+<div class="container">
+    <div id="tab-manage">
+        <div class="card">
+            <input type="hidden" id="edit-idx" value="-1">
+            <div class="form-group">
+                <span class="lbl">Offer Title</span>
+                <input type="text" id="o-title" class="inp" placeholder="e.g. NAVI LOAN APP">
+            </div>
+            <div class="form-group">
+                <span class="lbl">Top Banner Text (Marquee)</span>
+                <input type="text" id="o-banner" class="inp" placeholder="⚡ Payment in 1-3 Hours | Server Active">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <div class="form-group" style="flex:1">
+                    <span class="lbl">User Payout (₹)</span>
+                    <input type="text" id="o-user" class="inp" placeholder="10">
+                </div>
+                <div class="form-group" style="flex:1">
+                    <span class="lbl">Refer Payout (₹)</span>
+                    <input type="text" id="o-ref" class="inp" placeholder="5">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <div class="form-group" style="flex:1">
+                    <span class="lbl">Campaign ID (CID)</span>
+                    <input type="text" id="o-cid" class="inp" placeholder="1234">
+                </div>
+                <div class="form-group" style="flex:1">
+                    <span class="lbl">Publisher ID (UID)</span>
+                    <input type="text" id="o-uid" class="inp" placeholder="80">
+                </div>
+            </div>
+            <div class="form-group">
+                <span class="lbl">App Image URL</span>
+                <input type="text" id="o-img" class="inp" placeholder="https://...">
+            </div>
+            <div class="form-group">
+                <span class="lbl">Instructions (Steps)</span>
+                <div class="emoji-bar">
+                    <button class="emoji-btn" onclick="addEmoji('✅')">✅</button>
+                    <button class="emoji-btn" onclick="addEmoji('🔥')">🔥</button>
+                    <button class="emoji-btn" onclick="addEmoji('⚠️')">⚠️</button>
+                    <button class="emoji-btn" onclick="addEmoji('⬇️')">⬇️</button>
+                </div>
+                <textarea id="o-steps" class="inp" rows="5" placeholder="1. Download App..."></textarea>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="saveToGitHub()" class="save-btn" id="save-btn">🚀 PUSH OFFER (SAVE)</button>
+                <button onclick="clearForm()" class="mark-btn" style="background:#222; color:#fff; flex:0.4;">❌</button>
+            </div>
+        </div>
+        <h4 style="margin:20px 0 10px; color:#666; font-size:12px; text-transform:uppercase;">Live Offers</h4>
+        <div id="manage-list"><p style="text-align:center; color:#444; font-size:12px;">Loading offers...</p></div>
+    </div>
+
+    <div id="tab-pay" class="hidden">
+        <div class="date-tabs">
+            <button class="date-btn active" onclick="loadDateData(1, this)">📅 TODAY</button>
+            <button class="date-btn" onclick="loadDateData(2, this)">⏮️ YESTERDAY</button>
+            <button class="date-btn" onclick="loadDateData(3, this)">📊 LAST 7 DAYS</button>
+        </div>
+
+        <select id="subFilter" class="filter-select" onchange="filterSub(this.value)">
+            <option value="tasks">📂 MY TASKS (0)</option>
+            <option value="refs">👥 REFERRALS (0)</option>
+            <option value="hist">📜 PAYMENT HISTORY</option>
+        </select>
+        
+        <div id="loader" class="hidden">⚡ Connecting to Server...</div>
+        <div id="list-container"></div>
+    </div>
+</div>
+
+<script>
+    // 🔥 YOUR ORIGINAL SETTINGS (DO NOT TOUCH)
+    const MY_PROXY = "https://dawn-mud-5eb0.bkp022923.workers.dev";
+    const GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbwfjyg_o0a_BUgiC0Iuoit3OTtzBHhkvVf8kg6XeI0DaCKVpBsbljCbpK-Tbb7uk-Dqvg/exec";
+    const GITHUB_USER = "CashbackCampingn";
+    const GITHUB_REPO = "My-offers";
+    const GITHUB_FILE = "offers.json";
+    
+    // API KEYS
+    const API_VC = "8df0570da65f3a1798408c942b82839a";
+    const API_NK = "4942db27e323c6c351616b58f7509316";
+
+    let GITHUB_TOKEN = "";
+    let allLeads = [], offersData = {}, paidSet = new Set();
+    let fileSHA = "", currentSub = 'tasks';
+    let currentReportType = 1; // Default Today
+
+    window.onload = function() {
+        const saved = localStorage.getItem("gh_token");
+        if(saved) {
+            GITHUB_TOKEN = saved;
+            document.getElementById('login-overlay').style.display = 'none';
+            initOffers();
+        }
+    };
+        function saveTokenAndLogin() {
+        const t = document.getElementById('token-input').value.trim();
+        if(t.length < 10) return alert("Invalid Token!");
+        localStorage.setItem("gh_token", t);
+        GITHUB_TOKEN = t;
+        document.getElementById('login-overlay').style.display = 'none';
+        initOffers();
+    }
+
+    async function initOffers() {
+        try {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`, {
+                headers: { "Authorization": `token ${GITHUB_TOKEN}` }
+            });
+            if(res.status === 401) { localStorage.removeItem("gh_token"); alert("Token Expired! Refresh."); return; }
+            const json = await res.json();
+            fileSHA = json.sha;
+            const content = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
+            const raw = JSON.parse(content);
+            raw.forEach(o => {
+                // Ensure numbers are integer
+                offersData[String(o.cid)] = { 
+                    t: o.title, 
+                    u: parseInt(String(o.user_payout).replace(/\D/g,'')) || 0, 
+                    r: parseInt(String(o.refer_payout).replace(/\D/g,'')) || 0, 
+                    full: o 
+                };
+            });
+            renderManageList(raw);
+        } catch(e) { document.getElementById('manage-list').innerHTML = "<p style='color:red;text-align:center;'>Error loading offers.</p>"; }
+    }
+
+    // 🔥 DATE & DATA LOADER
+    function loadDateData(reportVal, btn) {
+        currentReportType = reportVal;
+        document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+        allLeads = []; // Reset Data
+        loadPayments();
+    }
+
+    async function loadPayments() {
+        document.getElementById('list-container').innerHTML = '';
+        document.getElementById('loader').classList.remove('hidden');
+        
+        try {
+            // Load Paid History
+            const shRes = await fetch(GOOGLE_SCRIPT);
+            const shJson = await shRes.json();
+            paidSet = new Set(shJson);
+        } catch(e) { console.log("Script Load Error", e); }
+
+        // Fetch based on Date Button (1=Today, 2=Yesterday, 3=Week)
+        const target = `https://panel.visioncamp.in/api.php?auth-token=${API_VC}&report=${currentReportType}`;
+        const targetNk = `https://partners.nkoffers.in/api.php?auth-token=${API_NK}&report=${currentReportType}`;
+        
+        try {
+            const [res1, res2] = await Promise.all([
+                fetch(`${MY_PROXY}?url=${encodeURIComponent(target)}&t=${Date.now()}`),
+                fetch(`${MY_PROXY}?url=${encodeURIComponent(targetNk)}&t=${Date.now()}`)
+            ]);
+            
+            const j1 = await res1.json();
+            const j2 = await res2.json();
+            
+            // Handle array or object response
+            let d1 = Array.isArray(j1) ? j1 : (j1.data || []);
+            let d2 = Array.isArray(j2) ? j2 : (j2.data || []);
+
+            allLeads = [...d1, ...d2];
+            document.getElementById('loader').classList.add('hidden');
+            processLeads();
+        } catch(e) { 
+            document.getElementById('loader').innerHTML = `<p style="color:red">Server Error! Proxy or API Down.</p>`; 
+        }
+    }
+
+    // 🔥 MASTER CALCULATION LOGIC (The Brain)
+    function processLeads() {
+        const list = document.getElementById('list-container'); list.innerHTML = '';
+        let tC=0, rC=0, html = "";
+        
+        // Filter Search
+        const s = document.getElementById('search').value.toLowerCase();
+        
+        // Reverse to show latest first
+        const processed = allLeads.filter(l => l.status && l.status.toLowerCase() === 'approved').reverse();
+
+        processed.forEach(l => {
+            // Basic Validation
+            if(!l.offerid) return;
+            const o = offersData[String(l.offerid)]; 
+            if(!o) return; // Skip unknown offers
+
+            // Search Filter
+            if(s && (!l.p1 || !l.p1.toLowerCase().includes(s))) return;
+
+            // 📅 Robust Date Formatter (Fixes NaN issue)
+            let dateStr = "Just Now";
+            if(l.date) {
+                // Fix "space" in date for mobile browsers (2023-01-01 12:00 -> 2023-01-01T12:00)
+                let safeDate = l.date.replace(' ', 'T');
+                let d = new Date(safeDate);
+                if(!isNaN(d)) {
+                    dateStr = d.toLocaleDateString('en-IN', {day:'numeric', month:'short'}) + ", " + 
+                              d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+                } else {
+                    dateStr = l.date; // Fallback to raw string
+                }
+            }
+
+            // ===========================================
+            // 📂 TYPE 1: SELF TASK (User ka apna paisa)
+            // ===========================================
+            if(currentSub === 'tasks' || currentSub === 'hist') {
+                const key = `${l.p1}_${l.offerid}_SELF`.toLowerCase().trim();
+                const isPaid = paidSet.has(key);
+                
+                // Show if Unpaid (in Tasks Tab) OR Paid (in History Tab)
+                if ((currentSub === 'tasks' && !isPaid) || (currentSub === 'hist' && isPaid)) { 
+                    if(!isPaid) tC++;
+                    // Remove _15 from self task UPI if present
+                    let cleanUpi = l.p1.includes('_') ? l.p1.split('_')[0] : l.p1;
+                    html += makeCard(cleanUpi, o.t, o.u, dateStr, key, isPaid, false); 
+                }
+            }
+
+            // ===========================================
+            // 👥 TYPE 2: REFERRAL (Refer ka paisa) - THE FIX
+            // ===========================================
+            // Check if P2 exists and is valid
+            if(l.p2 && l.p2.length > 3 && (currentSub === 'refs' || currentSub === 'hist')) {
+                
+                let p2Data = l.p2.trim();
+                let finalUpi = "";
+                let payAmount = o.r; // Default from JSON
+
+                // 🕵️‍♂️ STEP 1: Decode Only if Encoded (Base64 check)
+                // If it doesn't have @ but looks like base64, try decoding
+                if(!p2Data.includes('@') && !p2Data.includes('_')) {
+                    try {
+                        let decoded = atob(p2Data);
+                        // Validation: Decoded string must have @ to be valid
+                        if(decoded.includes('@')) {
+                            p2Data = decoded;
+                        }
+                    } catch(e) { 
+                        // Failed to decode? It might be plain text garbage. Ignore decoding.
+                    }
+                }
+
+                // 🕵️‍♂️ STEP 2: Extract Amount from "_" (The Split Logic)
+                // Expected format: "user@ybl_5" or "user@ybl"
+                if(p2Data.includes('_')) {
+                    let parts = p2Data.split('_');
+                    finalUpi = parts[0]; // The UPI part
+                    let overrideAmt = parseInt(parts[1]); // The Amount part
+                    
+                    // Logic: If _5 is found, THAT is the amount to pay the user.
+                    if(!isNaN(overrideAmt)) {
+                        payAmount = overrideAmt;
+                    }
+                } else {
+                    finalUpi = p2Data; // No _, so take full string
+                }
+
+                // 🕵️‍♂️ STEP 3: Final Validation
+                if(finalUpi.includes('@')) {
+                    const key = `${finalUpi}_${l.offerid}_REF`.toLowerCase().trim();
+                    const isPaid = paidSet.has(key);
+
+                    if ((currentSub === 'refs' && !isPaid) || (currentSub === 'hist' && isPaid)) { 
+                        if(!isPaid) rC++;
+                        html += makeCard(finalUpi, `REF: ${o.t}`, payAmount, dateStr, key, isPaid, true); 
+                    }
+                }
+            }
+        });
+
+        list.innerHTML = html || '<div style="text-align:center;margin-top:50px;color:#444;font-size:14px;">No Data Found 📭</div>';
+        
+        // Update Filter Dropdown Counts
+        const opts = document.getElementById('subFilter').options; 
+        opts[0].text = `📂 MY TASKS (${tC})`; 
+        opts[1].text = `👥 REFERRALS (${rC})`;
+    }
+
+    // 🔥 CARD MAKER (Visuals)
+    function makeCard(upi, title, amt, date, key, isPaid, isRef) {
+        const color = isRef ? '#ff9800' : '#00e5ff'; // Orange for Ref, Cyan for Self
+        const typeLabel = isRef ? 'REFERRAL EARNING' : 'SELF INSTALL';
+        
+        if(isPaid) return `
+            <div class="card" style="opacity:0.5; border-color:#333;">
+                <div style="color:${color}; font-weight:900; font-size:16px;">PAID ✅ ₹${amt}</div>
+                <div style="font-size:12px; color:#666; font-family:monospace;">${upi}</div>
+                <div style="font-size:10px; color:#444;">${date}</div>
+            </div>`;
+        
+        // Active Card
+        return `
+        <div class="card" id="card-${key.replace(/[^a-z0-9]/gi,'')}">
+            <div class="card-left-border" style="background:${color}"></div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <span style="font-size:10px; color:#888; background:#1a1a1a; padding:3px 6px; border-radius:4px;">${date}</span>
+                <span style="font-size:10px; color:${color}; font-weight:800; letter-spacing:0.5px;">${typeLabel}</span>
+            </div>
+
+            <div style="text-align:center; padding:10px 0;">
+                <div class="amt-huge">₹${amt}</div>
+                
+                <div class="upi-container" onclick="copyUpi(this, '${upi}')">
+                    <span class="upi-text">${upi}</span>
+                    <span style="font-size:14px">📋</span>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:8px;">
+                <button onclick="handleSmartPay('${upi}', '${key}', 'fampay')" class="mark-btn" style="background:#4a148c; color:white; font-size:12px; box-shadow:0 4px 10px rgba(74,20,140,0.4);">⚡ PAY FAM</button>
+                <button onclick="handleSmartPay('${upi}', '${key}', 'manual')" class="mark-btn" style="background:#222; border:1px solid #333; color:white; font-size:12px;">MANUAL</button>
+            </div>
+            
+            <div style="font-size:11px; color:#666; text-align:center; margin-top:10px; border-top:1px solid #222; padding-top:8px;">
+                ${title}
+            </div>
+        </div>`;
+    }
+
+    // UTILITIES
+    function copyUpi(el, text) {
+        navigator.clipboard.writeText(text);
+        let originalBg = el.style.background;
+        el.style.background = "#004d40"; // Green flash
+        el.style.borderColor = "#00e5ff";
+        setTimeout(() => { 
+            el.style.background = originalBg; 
+            el.style.borderColor = "#444";
+        }, 500);
+        // Toast logic could be added here, but visual feedback is faster
+    }
+
+    function handleSmartPay(upi, key, type) {
+        navigator.clipboard.writeText(upi); // Auto copy
+        if(type === 'fampay') window.open(`https://fam.one/${upi}`, '_blank');
+        
+        // Wait 1 sec then ask
+        setTimeout(() => { 
+            if(confirm(`💰 Did you pay ₹? to ${upi}?\n\nClick OK to hide this card.`)) {
+                markPaid(key);
+            }
+        }, 1000);
+    }
+    
+    function markPaid(key) {
+        const safeKey = key.replace(/[^a-z0-9]/gi,''); 
+        const card = document.getElementById('card-'+safeKey);
+        if(card) { 
+            card.style.opacity = '0.2'; 
+            card.innerHTML = `<div style="text-align:center; padding:20px; color:#00e5ff; font-weight:bold;">MARKED PAID ✅</div>`;
+        }
+        // Send to Google Sheet
+        fetch(GOOGLE_SCRIPT + "?action=pay&key=" + encodeURIComponent(key), { mode: 'no-cors' }).catch(e=>console.log(e));
+        paidSet.add(key);
+    }
+    
+    // TAB SWITCHER
+    function switchTab(t) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-pay').classList.add('hidden'); 
+        document.getElementById('tab-manage').classList.add('hidden'); 
+        document.getElementById('pay-tools').classList.add('hidden');
+        
+        document.getElementById('tab-' + t).classList.remove('hidden');
+        
+        if(t === 'manage') {
+            document.querySelector('.nav-tabs button:nth-child(1)').classList.add('active');
+        } else { 
+            document.querySelector('.nav-tabs button:nth-child(2)').classList.add('active'); 
+            document.getElementById('pay-tools').classList.remove('hidden'); 
+            // Auto-load Today's data if list is empty
+            if(allLeads.length === 0) loadDateData(1, document.querySelector('.date-btn')); 
+        }
+    }
+    
+    function filterSub(val) { currentSub = val; processLeads(); }
+    function forceReload() { loadPayments(); }
+
+    // (KEEP YOUR OLD MANAGE FUNCTIONS HERE: renderManageList, saveToGitHub, etc. 
+    // I am not repeating them to save space, but they must be below this line in your file)
+    
+    function renderManageList(list) { /* ...Paste old renderManageList code here... */ 
+        document.getElementById('manage-list').innerHTML = list.map((o, i) => `
+            <div class="card" style="display:flex; gap:10px; align-items:center;">
+                <img src="${o.image}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
+                <div style="flex:1; overflow:hidden;">
+                    <div style="font-weight:700; font-size:14px; color:#fff;">${o.title}</div>
+                    <div style="font-size:11px; color:#888;">₹${o.user_payout} | ₹${o.refer_payout}</div>
+                    <div style="font-size:9px; color:#555;">ID: ${o.cid}</div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:5px;">
+                    <button onclick="loadOfferToEdit(${i})" style="background:#222; border:1px solid #333; color:var(--primary); padding:5px 10px; border-radius:6px; font-weight:700; cursor:pointer;">EDIT</button>
+                    <button onclick="deleteOffer(${i})" class="del-btn">DEL</button>
+                </div>
+            </div>`).join('');
+    }
+    
+    // ... Paste remainder of old MANAGE functions (addEmoji, loadOfferToEdit, saveToGitHub, deleteOffer) ...
+    function addEmoji(e) { document.getElementById('o-steps').value += e + " "; }
+    function loadOfferToEdit(i) {
+        const o = Object.values(offersData).map(x=>x.full)[i];
+        document.getElementById('edit-idx').value = i;
+        document.getElementById('o-title').value = o.title;
+        document.getElementById('o-banner').value = o.banner_text || ""; 
+        document.getElementById('o-user').value = o.user_payout;
+        document.getElementById('o-ref').value = o.refer_payout;
+        document.getElementById('o-cid').value = o.cid;
+        document.getElementById('o-uid').value = o.uid;
+        document.getElementById('o-img').value = o.image;
+        document.getElementById('o-steps').value = o.steps.join('\n');
+        document.getElementById('save-btn').innerText = "🔄 UPDATE OFFER";
+        window.scrollTo(0,0);
+    }
+    function clearForm() {
+        document.getElementById('edit-idx').value = "-1";
+        document.querySelectorAll('.inp').forEach(i=>i.value='');
+        document.getElementById('save-btn').innerText = "🚀 PUSH OFFER (SAVE)";
+    }
+    async function saveToGitHub() {
+        if(!GITHUB_TOKEN) return alert("Token Missing!");
+        const title = document.getElementById('o-title').value;
+        const newObj = {
+            id: document.getElementById('o-cid').value,
+            title: title,
+            banner_text: document.getElementById('o-banner').value,
+            user_payout: document.getElementById('o-user').value,
+            refer_payout: document.getElementById('o-ref').value,
+            cid: document.getElementById('o-cid').value,
+            uid: document.getElementById('o-uid').value,
+            image: document.getElementById('o-img').value,
+            steps: document.getElementById('o-steps').value.split('\n').filter(x=>x.trim())
+        };
+        const list = Object.values(offersData).map(x=>x.full);
+        const idx = parseInt(document.getElementById('edit-idx').value);
+        if(idx >= 0) list[idx] = newObj; else list.push(newObj);
+        const safeContent = btoa(unescape(encodeURIComponent(JSON.stringify(list, null, 2))));
+        document.getElementById('save-btn').innerText = "PUSHING...";
+        try {
+            await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`, {
+                method: "PUT",
+                headers: { "Authorization": `token ${GITHUB_TOKEN}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ message: "Update", content: safeContent, sha: fileSHA })
+            });
+            alert("Success! ✅"); location.reload();
+        } catch(e) { alert("Error ❌"); }
+    }
+    async function deleteOffer(i) {
+        if(!confirm("Delete?")) return;
+        const list = Object.values(offersData).map(x=>x.full); list.splice(i, 1);
+        const safeContent = btoa(unescape(encodeURIComponent(JSON.stringify(list, null, 2))));
+        try { await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`, { method: "PUT", headers: { "Authorization": `token ${GITHUB_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify({ message: "Delete", content: safeContent, sha: fileSHA }) }); alert("Deleted! 🗑️"); location.reload(); } catch(e) { alert("Error"); }
+    }
+</script>
+</body>
+</html>

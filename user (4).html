@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Verify Reward</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #9cf016; --bg: #0a0a0a; --card: #161616; }
+        body { background: var(--bg); color: #fff; font-family: 'Poppins', sans-serif; margin: 0; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .status-bar { width: 100%; background: rgba(156,240,22,0.1); color: var(--primary); padding: 5px; font-size: 10px; font-weight: 700; border-radius: 10px; border: 1px solid rgba(156,240,22,0.2); margin-bottom: 10px; overflow: hidden; }
+        .brand { font-size: 11px; color: #888; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; }
+        #offerName { font-size: 24px; font-weight: 900; margin: 0; background: linear-gradient(to right, #9cf016, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .reward-card { width: 100%; max-width: 360px; background: linear-gradient(145deg, #1a1a1a, #000); border: 2px solid #333; border-radius: 25px; padding: 15px; margin: 15px 0; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; }
+        .v-badge { background: var(--primary); color: #000; padding: 3px 10px; font-size: 9px; font-weight: 900; border-radius: 50px; display: inline-block; margin-bottom: 5px; }
+        .amt { font-size: 50px; font-weight: 900; margin: 0; line-height: 1; color: #fff; text-shadow: 0 0 15px rgba(156,240,22,0.3); }
+        .payout-time { font-size: 11px; color: var(--primary); font-weight: 600; margin-top: 5px; }
+        .action-box { width: 100%; max-width: 360px; }
+        input { width: 100%; padding: 15px; background: #111; border: 2px solid #333; border-radius: 12px; color: #fff; font-size: 15px; font-weight: 700; text-align: center; box-sizing: border-box; margin-bottom: 12px; outline: none; }
+        .verify-btn { width: 100%; background: #0072ff; color: #fff; padding: 16px; border: none; border-radius: 50px; font-size: 18px; font-weight: 800; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 15px rgba(0,114,255,0.3); }
+        .steps-container { width: 100%; max-width: 360px; text-align: left; margin-top: 15px; }
+        .steps-title { font-size: 13px; font-weight: 800; color: #888; margin-bottom: 10px; border-left: 3px solid var(--primary); padding-left: 8px; }
+        .step-item { background: var(--card); border: 1px solid #222; border-radius: 12px; padding: 12px; margin-bottom: 8px; font-size: 13px; font-weight: 700; color: #eee; display: flex; align-items: center; gap: 10px; }
+        .tg-btn { position: fixed; bottom: 15px; right: 15px; width: 50px; height: 50px; background: #0088cc; border-radius: 50%; display: none; align-items: center; justify-content: center; color: #fff; text-decoration: none; font-size: 22px; }
+    </style>
+</head>
+<body>
+
+    <div class="status-bar">
+        <marquee scrollamount="4" id="topMarquee">● Server Status: Active ● Payout: 1-3 Hours ● Tracking Verified</marquee>
+    </div>
+
+    <div class="brand">@cashbackcampingn</div>
+    <h1 id="offerName">OFFER</h1>
+
+    <div class="reward-card">
+        <div class="v-badge">✓ VERIFIED & Safe</div>
+        <div style="font-size: 11px; color: #888; font-weight: 800;">CASHBACK REWARD</div>
+        <h2 id="payoutAmt" class="amt">--</h2>
+        <div class="payout-time">✅Complete earn</div>
+    </div>
+
+    <div class="action-box">
+        <input type="text" id="upiInput" placeholder="ENTER YOUR UPI ID">
+        <button class="verify-btn" onclick="go()">Verify & Start</button>
+    </div>
+
+    <div class="steps-container">
+        <div class="steps-title">INSTRUCTIONS</div>
+        <div id="dynamicSteps"></div>
+    </div>
+
+    <a id="tg" href="#" target="_blank" class="tg-btn">✈️</a>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    const tgLink = params.get('tg');
+    const encodedRef = params.get('ref'); 
+
+    let finalPromoterUpi = "";
+    let finalCustomAmt = null;
+    let currentOffer = null;
+
+    if(tgLink) { document.getElementById('tg').href = tgLink; document.getElementById('tg').style.display = 'flex'; }
+
+    // --- 1. DECODER ENGINE ---
+    function decodeRef() {
+        if(!encodedRef) return;
+        try {
+            let decodedString = atob(decodeURIComponent(encodedRef)); 
+            if(decodedString.includes('|')) {
+                let parts = decodedString.split('|');
+                finalPromoterUpi = parts[0].trim();
+                finalCustomAmt = parseInt(parts[1]);
+            } else if(decodedString.includes('@')) {
+                finalPromoterUpi = decodedString.trim();
+            }
+        } catch(e) { console.log("Invalid Link Code"); }
+    }
+
+    // --- 2. FETCH OFFER ---
+    fetch('offers.json?v=' + Date.now())
+        .then(res => res.arrayBuffer())
+        .then(buf => {
+            decodeRef();
+            const data = JSON.parse(new TextDecoder().decode(buf));
+            currentOffer = data.find(o => o.id == id);
+
+            if(currentOffer) {
+                document.getElementById('offerName').innerText = currentOffer.title.toUpperCase();
+                
+                // ✅ NEW: UPDATE MARQUEE BANNER
+                if(currentOffer.banner_text && currentOffer.banner_text.length > 5) {
+                    document.getElementById('topMarquee').innerText = currentOffer.banner_text;
+                }
+
+                let defaultPayout = parseInt(currentOffer.user_payout);
+                let budget = parseInt(currentOffer.user_payout) + parseInt(currentOffer.refer_payout);
+
+                if(finalCustomAmt !== null && finalCustomAmt >= 0 && finalCustomAmt <= budget) {
+                    document.getElementById('payoutAmt').innerText = "₹" + finalCustomAmt;
+                } else {
+                    document.getElementById('payoutAmt').innerText = "₹" + defaultPayout;
+                }
+
+                if(currentOffer.steps) {
+                    document.getElementById('dynamicSteps').innerHTML = currentOffer.steps.map(s => `<div class="step-item">${s}</div>`).join('');
+                }
+            } else { document.body.innerHTML = "<h2 style='color:white;text-align:center;margin-top:50px;'>OFFER EXPIRED</h2>"; }
+        });
+
+    // --- 3. FINAL TRACKING REDIRECT ---
+    function go() {
+        const upi = document.getElementById('upiInput').value.trim();
+        if(!upi.includes('@')) return alert("Enter valid UPI ID!");
+        if(!currentOffer) return;
+
+        let p2Data = finalPromoterUpi;
+        if(finalCustomAmt !== null) {
+            p2Data = finalPromoterUpi + "_" + finalCustomAmt;
+        }
+
+        const u = encodeURIComponent(upi);
+        const r = encodeURIComponent(p2Data);
+        
+        let link = "";
+
+        if(currentOffer.uid === "633") {
+            link = `https://link.hiqmobi.com/go/633/${currentOffer.cid}?p1=${u}&p2=${r}`;
+        } 
+        // ✅ CORRECT UID FOR NKOFFERS
+        else if(currentOffer.uid === "80") {
+            link = `https://partners.nkoffers.in/go?cid=${currentOffer.cid}&uid=80&p1=${u}&p2=${r}`;
+        } 
+        else {
+            link = `https://panel.visioncamp.in/go?cid=${currentOffer.cid}&uid=${currentOffer.uid}&p1=${u}&p2=${r}`;
+        }
+        
+        window.location.href = link;
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Live Payment Tracker - Ultra</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; background-color: #000000; font-family: 'Poppins', sans-serif; color: white; text-align: center; }
+        .container { max-width: 450px; margin: 20px auto; padding: 15px; }
+        .logo { font-size: 22px; font-weight: 900; color: #fff; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; }
+        .sub-txt { color: #888; font-size: 12px; margin-bottom: 20px; }
+        .search-box { background: #111; border: 1px solid #333; padding: 5px; border-radius: 50px; display: flex; align-items: center; margin-bottom: 25px; }
+        .inp { background: transparent; border: none; color: white; padding: 10px 15px; width: 100%; outline: none; font-size: 15px; font-weight: 600; }
+        .btn { background: #0072ff; color: white; border: none; padding: 10px 25px; border-radius: 40px; font-weight: 800; cursor: pointer; font-size: 14px; }
+        .result-area { display: none; text-align: left; animation: fadeInUp 0.5s; }
+        .sec-title { font-size: 12px; color: #888; font-weight: 800; letter-spacing: 1px; margin: 20px 0 10px 0; border-bottom: 1px solid #222; padding-bottom: 5px; }
+        .task-card { background: rgba(255, 255, 255, 0.05); border: 1px solid #333; padding: 12px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .t-name { font-weight: 700; font-size: 13px; max-width: 70%; }
+        .t-status { padding: 3px 10px; border-radius: 5px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .ref-summary-box { background: #121212; border: 1px solid #333; border-radius: 15px; padding: 15px; margin-bottom: 10px; text-align: center; }
+        .ref-total { font-size: 32px; font-weight: 900; color: #00c6ff; }
+        .ref-label { font-size: 12px; color: #888; margin-bottom: 15px; }
+        .ref-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #333; font-size: 13px; }
+        .ref-count { font-weight: 800; color: #ffd700; }
+        .loader { display: none; width: 30px; height: 30px; border: 3px solid #333; border-top: 3px solid #0072ff; border-radius: 50%; animation: spin 1s infinite; margin: 20px auto; }
+        .status-msg { font-size: 10px; color: #555; margin-top: 5px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">⚡Tracker</div>
+        <p class="sub-txt">Enter your UPI to check your Live Status</p>
+        
+        <select id="dateFilter" style="background:#111; color:#fff; border:1px solid #333; padding:8px; border-radius:50px; margin-bottom:15px; width:100%; outline:none; text-align:center; font-weight:600;">
+            <option value="1" selected>📅 Check Today Only (Default)</option>
+            <option value="3">🗓️ Check Last 7 Days</option>
+        </select>
+
+        <div class="search-box">
+            <input type="text" id="upi" class="inp" placeholder="Enter Your UPI ID...">
+            <button class="btn" id="checkBtn" onclick="startTracking()">CHECK</button>
+        </div>
+
+        <div class="loader" id="loader"></div>
+        <div id="loader-msg" class="status-msg"></div>
+
+        <div class="result-area" id="results">
+            <div class="sec-title">✅ MY TASKS STATUS</div>
+            <div id="myTaskList"></div>
+
+            <div class="sec-title">👥 REFERRAL STATUS (LIVE)</div>
+            <div class="ref-summary-box">
+                <div class="ref-total" id="totalRefs">0</div>
+                <div class="ref-label">Total Valid Referrals</div>
+                <div id="refBreakdown"></div>
+            </div>
+            <p style="font-size: 10px; color: #555; text-align: center;">*Updates live via Multi-Proxy Engine</p>
+        </div>
+    </div>
+
+    <script>
+        async function fetchFromPanels(url) {
+            // ONLY FAST ADMIN PROXY AS REQUESTED
+            const proxies = [
+                `https://dawn-mud-5eb0.bkp022923.workers.dev?url=${encodeURIComponent(url)}&t=${Date.now()}`
+            ];
+            
+            for (let i = 0; i < proxies.length; i++) {
+                try {
+                    const res = await fetch(proxies[i]);
+                    if (res.ok) {
+                        const json = await res.json();
+                        return json.data || (Array.isArray(json) ? json : []);
+                    }
+                } catch (e) { console.warn(`Engine ${i+1} failed`); }
+            }
+            return [];
+        }
+
+        async function startTracking() {
+            let upiInput = document.getElementById('upi').value.trim().toLowerCase();
+            if(!upiInput) { alert("Enter valid UPI ID!"); return; }
+
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('loader-msg').innerText = "Connecting to Live Servers...";
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('checkBtn').disabled = true;
+
+            try {
+                // 1. Load Offers
+                let offRes = await fetch('offers.json');
+                let offData = await offRes.json();
+                let nameMap = {};
+                offData.forEach(o => {
+                    if(o.id) nameMap[String(o.id)] = o.title;
+                    if(o.cid) nameMap[String(o.cid)] = o.title;
+                });
+
+                // 2. Handle Filter (Default to Today '1')
+                let filterEl = document.getElementById('dateFilter');
+                let rType = filterEl ? filterEl.value : '1';
+
+                const apiVis = `https://panel.visioncamp.in/api.php?auth-token=8df0570da65f3a1798408c942b82839a&report=${rType}`;
+                const apiHiq = `https://api.hiqmobi.com/api/conversion?api_token=4aexmy8vnpvtyf772lzrzskf8c4wavljf15f&page=1&limit=50`;
+                
+                // ✅ NEW: NKOffers API Added (From your screenshot)
+                const apiNk = `https://partners.nkoffers.in/api.php?auth-token=4942db27e323c6c351616b58f7509316&report=${rType}`;
+                // 3. Fetch Data (Added apiNk to list)
+                const [d1, d2, d3] = await Promise.all([ 
+                    fetchFromPanels(apiVis), 
+                    fetchFromPanels(apiHiq),
+                    fetchFromPanels(apiNk) 
+                ]);
+
+                let leads = [...d1, ...d2, ...d3]; // Merged All Data
+                
+                let myTasksHtml = '';
+                let myRefers = {};
+                let totalRefCount = 0;
+
+                // 4. Process Leads
+                leads.forEach(lead => {
+                    let status = (lead.status || "").toLowerCase();
+                    if(status !== 'approved' && status !== 'pending') return;
+
+                    let leadId = String(lead.offer_id || lead.offerid || lead.id || lead.campaign_id || "");
+                    
+                    // Show Install/Deposit Name (Yeh logic Goals dikhayega)
+                    let eventName = (lead.event || "").toUpperCase(); 
+                    let baseName = nameMap[leadId] || "Offer #" + leadId;
+                    let finalName = eventName ? `${baseName} - ${eventName}` : baseName;
+
+                    let p1Raw = (lead.p1 || "").toLowerCase();
+                    let p2Raw = (lead.p2 || "").toLowerCase();
+                    
+                    let p2Clean = p2Raw;
+                    try { if (p2Raw.length > 10) { p2Clean = atob(p2Raw).toLowerCase(); } } catch(e) {}
+
+                    // My Tasks Logic
+                    if(p1Raw === upiInput) {
+                        let color = status === 'approved' ? '#00ff00' : '#ff9800';
+                        myTasksHtml += `
+                            <div class="task-card">
+                                <span class="t-name">${finalName}</span>
+                                <span class="t-status" style="background:${color}; color:black;">${status}</span>
+                            </div>`;
+                    }
+
+                    // Referrals Logic
+                    if(status === 'approved' && (p2Clean === upiInput || p2Raw === upiInput)) {
+                        myRefers[finalName] = (myRefers[finalName] || 0) + 1;
+                        totalRefCount++;
+                    }
+                });
+
+                document.getElementById('myTaskList').innerHTML = myTasksHtml || '<div style="color:#555; text-align:center; padding:20px;">No Data Found.</div>';
+                document.getElementById('totalRefs').innerText = totalRefCount;
+
+                let refHtml = '';
+                for (let [name, count] of Object.entries(myRefers)) {
+                    refHtml += `<div class="ref-item"><span>${name}</span><span class="ref-count">${count} Done</span></div>`;
+                }
+                document.getElementById('refBreakdown').innerHTML = refHtml || '<div style="color:#555; font-size:11px; text-align:center;">No referrals yet.</div>';
+
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('results').style.display = 'block';
+                document.getElementById('checkBtn').disabled = false;
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loader-msg').innerText = "❌ Connection Error. Retry.";
+                document.getElementById('checkBtn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

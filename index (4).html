@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Promoter VIP Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;900&display=swap" rel="stylesheet">
+    <style>
+        /* --- 🎨 VIP ULTRA PREMIUM THEME --- */
+        :root { --primary: #00e5ff; --accent: #7000ff; --glass: rgba(20, 20, 20, 0.6); --border: rgba(255, 255, 255, 0.1); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Outfit', sans-serif; }
+        
+        body { 
+            margin: 0; padding: 0; background: #000; color: white; overflow-x: hidden;
+            /* Deep Animated Background */
+            background: radial-gradient(circle at 50% -20%, #1a0033, #000 60%);
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .header { position: sticky; top: 0; z-index: 100; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 15px 20px; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .logo { font-size: 20px; font-weight: 900; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
+        .tg-link { background: #111; color: #00e5ff; text-decoration: none; padding: 8px 16px; border-radius: 50px; font-size: 10px; font-weight: 800; border: 1px solid #333; transition: 0.3s; }
+        .tg-link:active { transform: scale(0.95); background: var(--primary); color: #000; }
+
+        /* SEARCH BAR */
+        .search-box { position: relative; max-width: 500px; margin: auto; }
+        .search-inp { width: 100%; background: #0f0f0f; border: 1px solid #333; color: white; padding: 14px 20px; border-radius: 15px; outline: none; font-size: 14px; transition: 0.3s; font-weight: 600; }
+        .search-inp:focus { border-color: var(--primary); box-shadow: 0 0 20px rgba(0, 229, 255, 0.15); background: #141414; }
+
+        /* PREMIUM CARDS */
+        .container { padding: 20px 15px; max-width: 500px; margin: auto; padding-bottom: 80px; }
+        .card { 
+            background: linear-gradient(145deg, #111, #0a0a0a); 
+            border: 1px solid var(--border); 
+            border-radius: 24px; 
+            padding: 12px; 
+            margin-bottom: 20px; 
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .card:active { transform: scale(0.98); }
+        
+        /* ✨ GLOW EFFECT ON HOVER/ACTIVE */
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary); opacity: 0.5; }
+
+        /* 🖼️ IMAGE FIX (The Magic Part) */
+        .img-box {
+            width: 100%; height: 140px; background: #000; border-radius: 18px; 
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid #222; margin-bottom: 12px; overflow: hidden;
+            position: relative;
+        }
+        .card img { 
+            width: 100%; height: 100%; 
+            object-fit: contain; /* फोटो कभी नहीं कटेगी */
+            padding: 5px;
+            transition: 0.5s;
+        }
+        
+        .card h3 { margin: 5px 0 12px 5px; font-size: 18px; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* BADGES FOR RATES */
+        .rates { display: flex; gap: 8px; }
+        .rate-badge { 
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px; border-radius: 14px;
+        }
+        .rb-user { background: rgba(164, 80, 255, 0.1); border: 1px solid rgba(164, 80, 255, 0.3); }
+        .rb-ref { background: rgba(0, 229, 255, 0.1); border: 1px solid rgba(0, 229, 255, 0.3); }
+        
+        .lbl { font-size: 9px; font-weight: 800; opacity: 0.7; margin-bottom: 2px; letter-spacing: 1px; }
+        .val { font-size: 16px; font-weight: 900; }
+        .c-purple { color: #d09bff; } .c-cyan { color: #00e5ff; }
+
+        .hint { font-size: 10px; color: #666; margin-top: 10px; text-align: right; font-weight: 600; padding-right: 5px; }
+
+        /* MODAL (Glass Sheet) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; backdrop-filter: blur(15px); align-items: flex-end; justify-content: center; }
+        .sheet { 
+            background: #121212; width: 100%; max-width: 500px; 
+            border-top-left-radius: 30px; border-top-right-radius: 30px; 
+            padding: 30px 25px 40px 25px; border-top: 1px solid #333; 
+            box-shadow: 0 -10px 50px rgba(0,0,0,0.8);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
+
+        .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .sheet-title { margin: 0; font-size: 22px; font-weight: 900; color: #fff; }
+        .close-btn { background: #222; color: #fff; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+
+        .inp-grp { margin-bottom: 20px; }
+        .inp-lbl { color: #888; font-size: 11px; font-weight: 700; margin-bottom: 8px; display: block; text-transform: uppercase; }
+        .inp { width: 100%; background: #000; border: 1px solid #333; padding: 18px; border-radius: 16px; color: #fff; font-size: 16px; font-weight: 600; outline: none; text-align: center; }
+        .inp:focus { border-color: var(--primary); }
+
+        .calc-row { display: flex; gap: 10px; background: #080808; padding: 15px; border-radius: 16px; border: 1px dashed #333; margin-top: 10px; }
+        .c-box { flex: 1; text-align: center; }
+        .c-val { display: block; font-size: 18px; font-weight: 900; margin-top: 5px; }
+
+        .gen-btn { width: 100%; background: var(--primary); color: #000; padding: 18px; border-radius: 50px; font-size: 16px; font-weight: 900; border: none; cursor: pointer; margin-top: 25px; box-shadow: 0 5px 20px rgba(0, 229, 255, 0.3); }
+        .link-area { margin-top: 15px; width: 100%; background: #000; border: 1px solid #333; color: var(--primary); padding: 10px; border-radius: 10px; font-size: 10px; display: none; word-break: break-all; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="top-nav">
+            <div class="logo">⚡ CASHBACK CAMPINGN</div>
+            <a href="https://t.me/cashbackcampingn" class="tg-link" target="_blank">HELP & SUPPORT</a>
+        </div>
+        <div class="search-box">
+            <input type="text" id="searchInp" class="search-inp" placeholder="🔍 Find Offer..." onkeyup="filterOffers()">
+        </div>
+    </div>
+
+    <div class="container" id="offerContainer">
+        <div style="text-align:center; margin-top:100px; color:#555;">
+            <div style="font-size:30px; margin-bottom:10px;">⚡</div>
+            Loading Premium Offers...
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal" onclick="if(event.target === this) closeModal()">
+        <div class="sheet">
+            <div class="sheet-head">
+                <h2 class="sheet-title" id="mTitle">Offer Name</h2>
+                <button class="close-btn" onclick="closeModal()">✕</button>
+            </div>
+            
+            <div class="inp-grp">
+                <span class="inp-lbl">Enter Payment UPI ID</span>
+                <input type="text" id="myUpi" class="inp" placeholder="example@upi">
+            </div>
+
+            <div class="inp-grp">
+                <span class="inp-lbl">Set User Amount (₹)</span>
+                <input type="number" id="userAmt" class="inp" placeholder="0" oninput="liveCalc()">
+            </div>
+
+            <div class="calc-row">
+                <div class="c-box">
+                    <span class="inp-lbl">USER GETS</span>
+                    <span class="c-val c-purple" id="liveUser">₹0</span>
+                </div>
+                <div class="c-box" style="border-left:1px solid #333;">
+                    <span class="inp-lbl">YOU KEEP</span>
+                    <span class="c-val c-cyan" id="liveRef">₹0</span>
+                </div>
+            </div>
+
+            <textarea id="copyResult" class="link-area" readonly rows="2"></textarea>
+            <button class="gen-btn" onclick="generate()">GENERATE LINK 🚀</button>
+        </div>
+    </div>
+
+<script>
+    let rawOffers = [];
+    let curOffer = null;
+
+    // 1. DATA LOAD
+    fetch('offers.json?v=' + Date.now())
+        .then(res => res.arrayBuffer())
+        .then(buf => {
+            const data = JSON.parse(new TextDecoder('utf-8').decode(buf));
+            rawOffers = data.reverse(); 
+            renderOffers(rawOffers);
+        }).catch(e => {
+            document.getElementById('offerContainer').innerHTML = "<p style='text-align:center; margin-top:50px;'>No Offers Live</p>";
+        });
+
+    function renderOffers(list) {
+        let html = '';
+        list.forEach((o, i) => {
+            html += `
+            <div class="card" onclick="openModal(${i})">
+                <div class="img-box">
+                    <img src="${o.image}" alt="Logo">
+                </div>
+                <h3>${o.title}</h3>
+                <div class="rates">
+                    <div class="rate-badge rb-user">
+                        <span class="lbl">USER</span>
+                        <span class="val c-purple">₹${o.user_payout}</span>
+                    </div>
+                    <div class="rate-badge rb-ref">
+                        <span class="lbl">PROFIT</span>
+                        <span class="val c-cyan">₹${o.refer_payout}</span>
+                    </div>
+                </div>
+                <div class="hint">Tap to Create Link ➔</div>
+            </div>`;
+        });
+        document.getElementById('offerContainer').innerHTML = html || "<p style='text-align:center; margin-top:50px; color:#555;'>No Offers Found</p>";
+    }
+
+    // 2. SEARCH
+    function filterOffers() {
+        let term = document.getElementById('searchInp').value.toLowerCase();
+        let filtered = rawOffers.filter(o => o.title.toLowerCase().includes(term));
+        renderOffers(filtered);
+    }
+
+    // 3. MODAL & CALC
+    function openModal(idx) {
+        let term = document.getElementById('searchInp').value.toLowerCase();
+        let list = term ? rawOffers.filter(o => o.title.toLowerCase().includes(term)) : rawOffers;
+        curOffer = list[idx];
+        curOffer.budget = parseInt(curOffer.user_payout) + parseInt(curOffer.refer_payout);
+
+        document.getElementById('mTitle').innerText = curOffer.title;
+        document.getElementById('myUpi').value = '';
+        document.getElementById('userAmt').value = curOffer.user_payout;
+        document.getElementById('copyResult').style.display = 'none';
+        document.getElementById('modal').style.display = 'flex';
+        liveCalc();
+    }
+
+    function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+    function liveCalc() {
+        let u = parseInt(document.getElementById('userAmt').value) || 0;
+        let p = curOffer.budget - u;
+        document.getElementById('liveUser').innerText = "₹" + u;
+        
+        let refEl = document.getElementById('liveRef');
+        refEl.innerText = "₹" + p;
+        
+        if(p < 0) { refEl.style.color = '#ff4444'; refEl.innerText = "Loss"; }
+        else { refEl.style.color = '#00e5ff'; }
+    }
+
+    // 4. LINK GENERATOR (Compatible with NKOffers UID logic)
+    function generate() {
+        let upi = document.getElementById('myUpi').value.trim();
+        let amt = document.getElementById('userAmt').value.trim();
+        let box = document.getElementById('copyResult');
+
+        if(!upi.includes('@')) return alert("Enter valid UPI ID!");
+        if((curOffer.budget - parseInt(amt)) < 0) return alert("High User Amount! Decrease it.");
+
+        try {
+            let path = window.location.pathname;
+            let baseUrl = window.location.origin + path.substring(0, path.lastIndexOf('/'));
+            
+            // This creates the SECRET CODE (UPI + Amount)
+            let secret = btoa(upi + "|" + amt).replace(/=/g, ''); 
+            
+            // It sends ID to user.html (user.html handles NKOffers/Uid logic)
+            let finalLink = baseUrl + "/user.html?id=" + curOffer.id + "&ref=" + encodeURIComponent(secret);
+
+            box.value = finalLink;
+            box.style.display = 'block';
+
+            navigator.clipboard.writeText(finalLink).then(() => {
+                alert("Link Copied! 🚀");
+            });
+        } catch (e) { alert("Error generating link"); }
+    }
+</script>
+</body>
+</html>
